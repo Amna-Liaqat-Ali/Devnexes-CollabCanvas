@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Canvas } from './components/Canvas';
-import { ToolPalette} from './components/ToolPalette.tsx';
+import { ToolPalette } from './components/ToolPalette';
 import { UserList } from './components/UserList';
 import './App.css';
 
