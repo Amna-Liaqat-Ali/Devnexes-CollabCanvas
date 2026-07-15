@@ -1,4 +1,6 @@
 import { useRef, useEffect } from 'react';
+import { useCanvasDrawing } from '../hooks/useCanvasDrawing';
+
 
 export function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
