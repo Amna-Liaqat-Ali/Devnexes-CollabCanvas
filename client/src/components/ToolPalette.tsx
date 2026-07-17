@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useBoardStore } from '../store/boardStore';
+import { useBoardStore } from './store/boardStore';
 
 
 type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text';

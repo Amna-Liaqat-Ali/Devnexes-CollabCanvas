@@ -1,100 +1,82 @@
-import { create } from 'zustand';
-import { Shape, Board } from '../../../shared/types';
+import type { Shape } from '../../../../shared/types';
 
-interface BoardState {
-  shapes: Shape[];
-  history: Shape[][];
-  historyIndex: number;
-  
-  addShape: (shape: Shape) => void;
-  deleteShape: (shapeId: string) => void;
-  clearBoard: () => void;
-  undo: () => void;
-  redo: () => void;
-  getBoard: () => Board;
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export const useBoardStore = create<BoardState>((set, get) => ({
-  shapes: [],
-  history: [[]],
-  historyIndex: 0,
+export function drawShape(ctx: CanvasRenderingContext2D, shape: Shape) {
+  ctx.save();
 
-  addShape: (shape: Shape) => {
-    set((state) => {
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      const updatedShapes = [...state.shapes, shape];
-      newHistory.push(updatedShapes);
-
-      return {
-        shapes: updatedShapes,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
-  },
-
-  deleteShape: (shapeId: string) => {
-    set((state) => {
-      const updatedShapes = state.shapes.filter(s => s.id !== shapeId);
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(updatedShapes);
-
-      return {
-        shapes: updatedShapes,
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
-  },
-
-  clearBoard: () => {
-    set((state) => {
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push([]);
-
-      return {
-        shapes: [],
-        history: newHistory,
-        historyIndex: newHistory.length - 1,
-      };
-    });
-  },
-
-  undo: () => {
-    set((state) => {
-      if (state.historyIndex > 0) {
-        const newIndex = state.historyIndex - 1;
-        return {
-          historyIndex: newIndex,
-          shapes: state.history[newIndex],
-        };
+  switch (shape.type) {
+    case 'pen': {
+      if (shape.points.length < 2) break;
+      ctx.strokeStyle = shape.color;
+      ctx.lineWidth = shape.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(shape.points[0][0], shape.points[0][1]);
+      for (const [x, y] of shape.points.slice(1)) {
+        ctx.lineTo(x, y);
       }
-      return state;
-    });
-  },
-
-  redo: () => {
-    set((state) => {
-      if (state.historyIndex < state.history.length - 1) {
-        const newIndex = state.historyIndex + 1;
-        return {
-          historyIndex: newIndex,
-          shapes: state.history[newIndex],
-        };
+      ctx.stroke();
+      break;
+    }
+    case 'eraser': {
+      if (shape.points.length < 2) break;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = shape.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(shape.points[0][0], shape.points[0][1]);
+      for (const [x, y] of shape.points.slice(1)) {
+        ctx.lineTo(x, y);
       }
-      return state;
-    });
-  },
+      ctx.stroke();
+      break;
+    }
+    case 'line': {
+      ctx.strokeStyle = shape.color;
+      ctx.lineWidth = shape.width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(shape.x1, shape.y1);
+      ctx.lineTo(shape.x2, shape.y2);
+      ctx.stroke();
+      break;
+    }
+    case 'rect': {
+      ctx.strokeStyle = shape.color;
+      ctx.fillStyle = shape.color;
+      ctx.lineWidth = 2;
+      if (shape.fill) {
+        ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
+      } else {
+        ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+      }
+      break;
+    }
+    case 'circle': {
+      ctx.strokeStyle = shape.color;
+      ctx.fillStyle = shape.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(shape.cx, shape.cy, shape.r, 0, Math.PI * 2);
+      if (shape.fill) {
+        ctx.fill();
+      } else {
+        ctx.stroke();
+      }
+      break;
+    }
+    case 'text': {
+      ctx.fillStyle = shape.color;
+      ctx.font = `${shape.fontSize}px sans-serif`;
+      ctx.fillText(shape.text, shape.x, shape.y);
+      break;
+    }
+  }
 
-  getBoard: () => {
-    const state = get();
-    return {
-      id: 'local-board',
-      roomCode: 'LOCAL',
-      shapes: state.shapes,
-      users: {},
-      createdAt: new Date(),
-      lastModified: new Date(),
-    };
-  },
-}));
+  ctx.restore();
+}

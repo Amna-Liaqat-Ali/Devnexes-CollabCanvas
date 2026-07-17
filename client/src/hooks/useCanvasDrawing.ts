@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
-import { Shape } from '../../../shared/types';
-import { drawShape, generateId } from '../utils/drawing';
-import { useBoardStore } from '../store/boardStore';
+import type { Shape } from '../../../shared/types';
+import { drawShape, generateId } from '../components/utils/drawing';
+import { useBoardStore } from '../components/store/boardStore';
 
 interface DrawingState {
   isDrawing: boolean;
