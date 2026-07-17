@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Shape } from '../../../shared/types';
 import { drawShape, generateId } from '../components/utils/drawing';
 import { useBoardStore } from '../components/store/boardStore';
@@ -24,18 +24,15 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
 
   const currentShapeRef = useRef<Shape | null>(null);
 
-  useEffect(() => {
+  const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
     ctx.strokeStyle = '#e8e8e8';
     ctx.lineWidth = 0.5;
     for (let i = 0; i < canvas.width; i += 20) {
@@ -51,16 +48,15 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
       ctx.stroke();
     }
 
-    // Draw all shapes
-    shapes.forEach(shape => {
-      drawShape(ctx, shape);
-    });
-
-    // Draw current shape if drawing
+    shapes.forEach(shape => drawShape(ctx, shape));
     if (currentShapeRef.current) {
       drawShape(ctx, currentShapeRef.current);
     }
-  }, [shapes, canvasRef]);
+  }, [canvasRef, shapes]);
+
+  useEffect(() => {
+    redraw();
+  }, [redraw]);
 
   const createShapePreview = (x: number, y: number): Shape | null => {
     const { startX, startY } = state;
@@ -134,36 +130,6 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
     }
   };
 
-  const redraw = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = '#e8e8e8';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i < canvas.width; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
-      ctx.stroke();
-    }
-    for (let i = 0; i < canvas.height; i += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
-      ctx.stroke();
-    }
-
-    shapes.forEach(shape => drawShape(ctx, shape));
-    if (currentShapeRef.current) {
-      drawShape(ctx, currentShapeRef.current);
-    }
-  };
-
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!state.isDrawing) return;
 
@@ -203,5 +169,6 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
       handleMouseMove,
       handleMouseUp,
     },
+    redraw,
   };
 }
