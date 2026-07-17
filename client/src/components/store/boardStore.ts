@@ -1,23 +1,34 @@
 import { create } from 'zustand';
 import type { Shape, Board } from '../../../../shared/types';
 
+export type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text';
+
 interface BoardState {
   shapes: Shape[];
   history: Shape[][];
   historyIndex: number;
-  
+  tool: Tool;
+  color: string;
+  size: number;
+
   addShape: (shape: Shape) => void;
   deleteShape: (shapeId: string) => void;
   clearBoard: () => void;
   undo: () => void;
   redo: () => void;
   getBoard: () => Board;
+  setTool: (tool: Tool) => void;
+  setColor: (color: string) => void;
+  setSize: (size: number) => void;
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
   shapes: [],
   history: [[]],
   historyIndex: 0,
+  tool: 'pen',
+  color: '#000000',
+  size: 3,
 
   addShape: (shape: Shape) => {
     set((state) => {
@@ -97,4 +108,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       lastModified: new Date(),
     };
   },
+
+  setTool: (tool: Tool) => set({ tool }),
+  setColor: (color: string) => set({ color }),
+  setSize: (size: number) => set({ size }),
 }));

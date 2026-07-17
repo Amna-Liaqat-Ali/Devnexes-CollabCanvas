@@ -5,9 +5,6 @@ import { useBoardStore } from '../components/store/boardStore';
 
 interface DrawingState {
   isDrawing: boolean;
-  tool: 'pen' | 'line' | 'rect' | 'circle' | 'text' | 'eraser';
-  color: string;
-  size: number;
   startX: number;
   startY: number;
 }
@@ -15,12 +12,12 @@ interface DrawingState {
 export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) {
   const shapes = useBoardStore(state => state.shapes);
   const addShape = useBoardStore(state => state.addShape);
-  
+  const tool = useBoardStore(state => state.tool);
+  const color = useBoardStore(state => state.color);
+  const size = useBoardStore(state => state.size);
+
   const [state, setState] = useState<DrawingState>({
     isDrawing: false,
-    tool: 'pen',
-    color: '#000000',
-    size: 3,
     startX: 0,
     startY: 0,
   });
@@ -63,65 +60,10 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
     if (currentShapeRef.current) {
       drawShape(ctx, currentShapeRef.current);
     }
-  }, [shapes]);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    setState(prev => ({
-      ...prev,
-      isDrawing: true,
-      startX: x,
-      startY: y,
-    }));
-
-    if (state.tool === 'pen' || state.tool === 'eraser') {
-      currentShapeRef.current = {
-        id: generateId(),
-        type: state.tool,
-        points: [[x, y]],
-        color: state.color,
-        width: state.size,
-        userId: 'local-user',
-      };
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!state.isDrawing) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    if (state.tool === 'pen' || state.tool === 'eraser') {
-      if (currentShapeRef.current && 'points' in currentShapeRef.current) {
-        currentShapeRef.current.points.push([x, y]);
-      }
-    } else {
-      currentShapeRef.current = createShapePreview(x, y);
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (!state.isDrawing || !currentShapeRef.current) return;
-
-    setState(prev => ({ ...prev, isDrawing: false }));
-
-    addShape(currentShapeRef.current);
-    currentShapeRef.current = null;
-  };
+  }, [shapes, canvasRef]);
 
   const createShapePreview = (x: number, y: number): Shape | null => {
-    const { tool, color, size, startX, startY } = state;
+    const { startX, startY } = state;
 
     switch (tool) {
       case 'line':
@@ -147,7 +89,7 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
           color,
           userId: 'local-user',
         };
-      case 'circle':
+      case 'circle': {
         const radius = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
         return {
           id: generateId(),
@@ -158,34 +100,108 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
           color,
           userId: 'local-user',
         };
+      }
       default:
         return null;
     }
   };
 
-  const setTool = (tool: DrawingState['tool']) => {
-    setState(prev => ({ ...prev, tool }));
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setState({
+      isDrawing: true,
+      startX: x,
+      startY: y,
+    });
+
+    if (tool === 'pen' || tool === 'eraser') {
+      currentShapeRef.current = {
+        id: generateId(),
+        type: tool,
+        points: [[x, y]],
+        color,
+        width: size,
+        userId: 'local-user',
+      };
+    } else {
+      currentShapeRef.current = null;
+    }
   };
 
-  const setColor = (color: string) => {
-    setState(prev => ({ ...prev, color }));
+  const redraw = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < canvas.width; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvas.height);
+      ctx.stroke();
+    }
+    for (let i = 0; i < canvas.height; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(canvas.width, i);
+      ctx.stroke();
+    }
+
+    shapes.forEach(shape => drawShape(ctx, shape));
+    if (currentShapeRef.current) {
+      drawShape(ctx, currentShapeRef.current);
+    }
   };
 
-  const setSize = (size: number) => {
-    setState(prev => ({ ...prev, size }));
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!state.isDrawing) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (tool === 'pen' || tool === 'eraser') {
+      if (currentShapeRef.current && 'points' in currentShapeRef.current) {
+        currentShapeRef.current.points.push([x, y]);
+      }
+    } else {
+      currentShapeRef.current = createShapePreview(x, y);
+    }
+
+    redraw();
+  };
+
+  const handleMouseUp = () => {
+    if (!state.isDrawing || !currentShapeRef.current) {
+      setState(prev => ({ ...prev, isDrawing: false }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isDrawing: false }));
+
+    addShape(currentShapeRef.current);
+    currentShapeRef.current = null;
   };
 
   return {
-    state,
     handlers: {
       handleMouseDown,
       handleMouseMove,
       handleMouseUp,
-    },
-    actions: {
-      setTool,
-      setColor,
-      setSize,
     },
   };
 }

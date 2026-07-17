@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { useBoardStore } from './store/boardStore';
-
-
-type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text';
+import { useBoardStore, type Tool } from './store/boardStore';
 
 export function ToolPalette() {
-  const [activeTool, setActiveTool] = useState<Tool>('pen');
-  const [color, setColor] = useState('#000000');
-  const [size, setSize] = useState(3);
+  const tool = useBoardStore(state => state.tool);
+  const color = useBoardStore(state => state.color);
+  const size = useBoardStore(state => state.size);
+  const setTool = useBoardStore(state => state.setTool);
+  const setColor = useBoardStore(state => state.setColor);
+  const setSize = useBoardStore(state => state.setSize);
+  const undo = useBoardStore(state => state.undo);
+  const redo = useBoardStore(state => state.redo);
+  const clearBoard = useBoardStore(state => state.clearBoard);
 
   const tools: { id: Tool; label: string; emoji: string }[] = [
     { id: 'pen', label: 'Pen', emoji: '✏️' },
@@ -23,14 +25,14 @@ export function ToolPalette() {
       <div className="palette-section">
         <h3>Tools</h3>
         <div className="tool-buttons">
-          {tools.map(tool => (
+          {tools.map(t => (
             <button
-              key={tool.id}
-              className={`tool-btn ${activeTool === tool.id ? 'active' : ''}`}
-              onClick={() => setActiveTool(tool.id)}
-              title={tool.label}
+              key={t.id}
+              className={`tool-btn ${tool === t.id ? 'active' : ''}`}
+              onClick={() => setTool(t.id)}
+              title={t.label}
             >
-              {tool.emoji}
+              {t.emoji}
             </button>
           ))}
         </div>
@@ -41,8 +43,8 @@ export function ToolPalette() {
       <div className="palette-section">
         <label>
           Color:
-          <input 
-            type="color" 
+          <input
+            type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
           />
@@ -52,10 +54,10 @@ export function ToolPalette() {
       <div className="palette-section">
         <label>
           Size: <span>{size}px</span>
-          <input 
-            type="range" 
-            min="1" 
-            max="20" 
+          <input
+            type="range"
+            min="1"
+            max="20"
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
           />
@@ -65,10 +67,9 @@ export function ToolPalette() {
       <div className="palette-divider"></div>
 
       <div className="palette-actions">
-        <button className="action-btn">↶ Undo</button>
-        <button className="action-btn">↷ Redo</button>
-        <button className="action-btn">🗑️ Clear</button>
-        <button className="action-btn">💾 Export</button>
+        <button className="action-btn" onClick={undo}>↶ Undo</button>
+        <button className="action-btn" onClick={redo}>↷ Redo</button>
+        <button className="action-btn" onClick={clearBoard}>🗑️ Clear</button>
       </div>
     </div>
   );
