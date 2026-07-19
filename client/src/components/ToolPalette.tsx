@@ -11,13 +11,13 @@ export function ToolPalette() {
   const redo = useBoardStore(state => state.redo);
   const clearBoard = useBoardStore(state => state.clearBoard);
 
-  const tools: { id: Tool; label: string; emoji: string }[] = [
-    { id: 'pen', label: 'Pen', emoji: '✏️' },
-    { id: 'eraser', label: 'Eraser', emoji: '🗑️' },
-    { id: 'line', label: 'Line', emoji: '📏' },
-    { id: 'rect', label: 'Rectangle', emoji: '▭' },
-    { id: 'circle', label: 'Circle', emoji: '●' },
-    { id: 'text', label: 'Text', emoji: 'T' },
+  const tools: { id: Tool; label: string; icon: string }[] = [
+    { id: 'pen', label: 'Pen', icon: '✏️' },
+    { id: 'eraser', label: 'Eraser', icon: '🗑️' },
+    { id: 'line', label: 'Line', icon: '📏' },
+    { id: 'rect', label: 'Rectangle', icon: '▭' },
+    { id: 'circle', label: 'Circle', icon: '●' },
+    { id: 'text', label: 'Text', icon: 'T' },
   ];
 
   return (
@@ -32,7 +32,7 @@ export function ToolPalette() {
               onClick={() => setTool(t.id)}
               title={t.label}
             >
-              {t.emoji}
+              {t.icon}
             </button>
           ))}
         </div>
@@ -67,9 +67,9 @@ export function ToolPalette() {
       <div className="palette-divider"></div>
 
       <div className="palette-actions">
-        <button className="action-btn" onClick={undo}>↶ Undo</button>
-        <button className="action-btn" onClick={redo}>↷ Redo</button>
-        <button className="action-btn" onClick={clearBoard}>🗑️ Clear</button>
+        <button className="action-btn" onClick={undo}>Undo</button>
+        <button className="action-btn" onClick={redo}>Redo</button>
+        <button className="action-btn" onClick={clearBoard}>Clear</button>
       </div>
     </div>
   );
