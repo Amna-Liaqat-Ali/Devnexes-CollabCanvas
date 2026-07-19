@@ -1,10 +1,24 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCanvasDrawing } from '../hooks/useCanvasDrawing';
+import { useBoardStore } from './store/boardStore';
+import { generateId } from './utils/drawing';
 
 export function Canvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { handlers, redraw } = useCanvasDrawing(canvasRef);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const addShape = useBoardStore(state => state.addShape);
+  const color = useBoardStore(state => state.color);
+  const size = useBoardStore(state => state.size);
+
+  const [textEditor, setTextEditor] = useState<{ x: number; y: number } | null>(null);
+  const [textValue, setTextValue] = useState('');
+
+  const { handlers, redraw } = useCanvasDrawing(canvasRef, (x, y) => {
+    setTextValue('');
+    setTextEditor({ x, y });
+  });
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -25,6 +39,30 @@ export function Canvas() {
     return () => observer.disconnect();
   }, [redraw]);
 
+  useEffect(() => {
+    if (textEditor) {
+      inputRef.current?.focus();
+    }
+  }, [textEditor]);
+
+  const commitText = () => {
+    if (!textEditor) return;
+    const text = textValue.trim();
+    if (text) {
+      addShape({
+        id: generateId(),
+        type: 'text',
+        x: textEditor.x,
+        y: textEditor.y,
+        text,
+        fontSize: size * 4,
+        color,
+        userId: 'local-user',
+      });
+    }
+    setTextEditor(null);
+  };
+
   return (
     <div ref={wrapperRef} className="canvas-wrapper">
       <canvas
@@ -35,6 +73,25 @@ export function Canvas() {
         onMouseUp={handlers.handleMouseUp}
         onMouseLeave={handlers.handleMouseUp}
       />
+      {textEditor && (
+        <input
+          ref={inputRef}
+          className="text-editor-input"
+          style={{
+            left: textEditor.x,
+            top: textEditor.y - size * 4,
+            color,
+            fontSize: size * 4,
+          }}
+          value={textValue}
+          onChange={(e) => setTextValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitText();
+            if (e.key === 'Escape') setTextEditor(null);
+          }}
+          onBlur={commitText}
+        />
+      )}
     </div>
   );
 }

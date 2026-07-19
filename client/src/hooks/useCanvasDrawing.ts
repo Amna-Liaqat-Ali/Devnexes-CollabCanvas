@@ -9,7 +9,10 @@ interface DrawingState {
   startY: number;
 }
 
-export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) {
+export function useCanvasDrawing(
+  canvasRef: React.RefObject<HTMLCanvasElement>,
+  onTextClick?: (x: number, y: number) => void
+) {
   const shapes = useBoardStore(state => state.shapes);
   const addShape = useBoardStore(state => state.addShape);
   const tool = useBoardStore(state => state.tool);
@@ -109,6 +112,11 @@ export function useCanvasDrawing(canvasRef: React.RefObject<HTMLCanvasElement>) 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+
+    if (tool === 'text') {
+      onTextClick?.(x, y);
+      return;
+    }
 
     setState({
       isDrawing: true,
