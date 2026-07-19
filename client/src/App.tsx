@@ -42,26 +42,36 @@ function JoinScreen({ onJoin }: { onJoin: (code: string, name: string) => void }
   return (
     <div className="join-screen">
       <div className="join-card">
-        <h1>🎨 CollabCanvas</h1>
-        <p>Real-time collaborative whiteboard</p>
-        
+        <h1>CollabCanvas</h1>
+        <p className="join-subtitle">Draw and brainstorm together, in real time.</p>
+
         <form onSubmit={handleSubmit}>
-          <input 
-            placeholder="Room Code (e.g. ABC123)" 
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            maxLength={6}
-            autoFocus
-          />
-          <input 
-            placeholder="Your Name" 
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
+          <div className="field">
+            <label htmlFor="room-code">Room code</label>
+            <input
+              id="room-code"
+              placeholder="e.g. ABC123"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              maxLength={6}
+              autoFocus
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="username">Your name</label>
+            <input
+              id="username"
+              placeholder="e.g. Amna"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
           <button type="submit" disabled={!roomCode || !username}>
             Join Room
           </button>
         </form>
+
+        <p className="join-hint">Don't have a room code yet? Ask whoever's hosting to share theirs.</p>
       </div>
     </div>
   );
