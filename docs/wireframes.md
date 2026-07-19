@@ -55,8 +55,3 @@ Shown after joining. Three-column layout: tool palette, canvas, user list.
 - **User list** (right): current room code, own username, other connected participants — this is where presence (colored dot per user) and live-cursor labels attach.
 - Responsive behavior: on narrow/tablet widths the layout stacks or collapses the side panels so the tool palette is never clipped (see `App.css` responsive rules).
 
-## Open items for later weeks
-
-- Room-full / connection-error banner placement (Week 4).
-- Export button placement (PNG/JSON) — likely in the tool palette actions row (Week 5).
-- Reconnect/loading overlay over the canvas (Week 4–5).
