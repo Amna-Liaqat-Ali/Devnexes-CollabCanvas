@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Canvas } from './components/Canvas';
 import { ToolPalette } from './components/ToolPalette';
 import { UserList } from './components/UserList';
+import { useRoomConnection } from './hooks/useRoomConnection';
 import './App.css';
 
 export function App() {
@@ -10,7 +11,7 @@ export function App() {
   const [username, setUsername] = useState('');
 
   const handleJoin = (code: string, name: string) => {
-    setRoomCode(code);
+    setRoomCode(code.trim().toUpperCase());
     setUsername(name);
     setIsJoined(true);
   };
@@ -19,11 +20,29 @@ export function App() {
     return <JoinScreen onJoin={handleJoin} />;
   }
 
+  return <Room roomCode={roomCode} username={username} onLeave={() => setIsJoined(false)} />;
+}
+
+function Room({ roomCode, username, onLeave }: { roomCode: string; username: string; onLeave: () => void }) {
+  const { status, errorMessage, users, selfId } = useRoomConnection(roomCode, username);
+
+  if (status === 'room_full' || status === 'error') {
+    return (
+      <div className="join-screen">
+        <div className="join-card">
+          <h1>CollabCanvas</h1>
+          <p className="join-subtitle">{errorMessage ?? 'Something went wrong.'}</p>
+          <button onClick={onLeave}>Back</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       <ToolPalette />
       <Canvas />
-      <UserList username={username} roomCode={roomCode} />
+      <UserList roomCode={roomCode} users={users} selfId={selfId} />
     </div>
   );
 }
