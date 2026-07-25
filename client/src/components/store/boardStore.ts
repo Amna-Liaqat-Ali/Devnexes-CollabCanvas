@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import type { Shape, Board } from '../../../../shared/types';
+import { translateShape } from '../utils/drawing';
 
-export type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text';
+export type Tool = 'pen' | 'eraser' | 'line' | 'rect' | 'circle' | 'text' | 'select';
 
 interface BoardState {
   shapes: Shape[];
@@ -10,6 +11,7 @@ interface BoardState {
   tool: Tool;
   color: string;
   size: number;
+  selectedId: string | null;
 
   addShape: (shape: Shape) => void;
   deleteShape: (shapeId: string) => void;
@@ -20,6 +22,10 @@ interface BoardState {
   setTool: (tool: Tool) => void;
   setColor: (color: string) => void;
   setSize: (size: number) => void;
+  selectShape: (shapeId: string | null) => void;
+  moveShapePreview: (shapeId: string, dx: number, dy: number) => void;
+  commitMove: () => void;
+  deleteSelected: () => void;
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -29,6 +35,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   tool: 'pen',
   color: '#000000',
   size: 3,
+  selectedId: null,
 
   addShape: (shape: Shape) => {
     set((state) => {
@@ -109,7 +116,34 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     };
   },
 
-  setTool: (tool: Tool) => set({ tool }),
+  setTool: (tool: Tool) => set((state) => ({ tool, selectedId: tool === 'select' ? state.selectedId : null })),
   setColor: (color: string) => set({ color }),
   setSize: (size: number) => set({ size }),
+
+  selectShape: (shapeId: string | null) => set({ selectedId: shapeId }),
+
+  moveShapePreview: (shapeId: string, dx: number, dy: number) => {
+    set((state) => ({
+      shapes: state.shapes.map(s => s.id === shapeId ? translateShape(s, dx, dy) : s),
+    }));
+  },
+
+  commitMove: () => {
+    set((state) => {
+      const newHistory = state.history.slice(0, state.historyIndex + 1);
+      newHistory.push(state.shapes);
+      return {
+        history: newHistory,
+        historyIndex: newHistory.length - 1,
+      };
+    });
+  },
+
+  deleteSelected: () => {
+    const { selectedId, deleteShape } = get();
+    if (selectedId) {
+      deleteShape(selectedId);
+      set({ selectedId: null });
+    }
+  },
 }));

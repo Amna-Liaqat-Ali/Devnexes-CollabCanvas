@@ -10,8 +10,11 @@ export function ToolPalette() {
   const undo = useBoardStore(state => state.undo);
   const redo = useBoardStore(state => state.redo);
   const clearBoard = useBoardStore(state => state.clearBoard);
+  const selectedId = useBoardStore(state => state.selectedId);
+  const deleteSelected = useBoardStore(state => state.deleteSelected);
 
   const tools: { id: Tool; label: string; icon: string }[] = [
+    { id: 'select', label: 'Select', icon: '⬚' },
     { id: 'pen', label: 'Pen', icon: '✏️' },
     { id: 'eraser', label: 'Eraser', icon: '🗑️' },
     { id: 'line', label: 'Line', icon: '📏' },
@@ -69,6 +72,9 @@ export function ToolPalette() {
       <div className="palette-actions">
         <button className="action-btn" onClick={undo}>Undo</button>
         <button className="action-btn" onClick={redo}>Redo</button>
+        {selectedId && (
+          <button className="action-btn" onClick={deleteSelected}>Delete Selected</button>
+        )}
         <button className="action-btn" onClick={clearBoard}>Clear</button>
       </div>
     </div>

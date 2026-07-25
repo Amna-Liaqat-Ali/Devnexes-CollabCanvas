@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Shape } from '../../../shared/types';
-import { drawShape, generateId } from '../components/utils/drawing';
+import { drawShape, drawSelectionOutline, generateId, hitTestShape } from '../components/utils/drawing';
 import { useBoardStore } from '../components/store/boardStore';
 
 interface DrawingState {
@@ -18,6 +18,10 @@ export function useCanvasDrawing(
   const tool = useBoardStore(state => state.tool);
   const color = useBoardStore(state => state.color);
   const size = useBoardStore(state => state.size);
+  const selectedId = useBoardStore(state => state.selectedId);
+  const selectShape = useBoardStore(state => state.selectShape);
+  const moveShapePreview = useBoardStore(state => state.moveShapePreview);
+  const commitMove = useBoardStore(state => state.commitMove);
 
   const [state, setState] = useState<DrawingState>({
     isDrawing: false,
@@ -26,6 +30,7 @@ export function useCanvasDrawing(
   });
 
   const currentShapeRef = useRef<Shape | null>(null);
+  const isDraggingRef = useRef(false);
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -55,7 +60,11 @@ export function useCanvasDrawing(
     if (currentShapeRef.current) {
       drawShape(ctx, currentShapeRef.current);
     }
-  }, [canvasRef, shapes]);
+    const selected = shapes.find(s => s.id === selectedId);
+    if (selected) {
+      drawSelectionOutline(ctx, selected);
+    }
+  }, [canvasRef, shapes, selectedId]);
 
   useEffect(() => {
     redraw();
@@ -118,6 +127,14 @@ export function useCanvasDrawing(
       return;
     }
 
+    if (tool === 'select') {
+      const hit = [...shapes].reverse().find(s => hitTestShape(s, x, y));
+      selectShape(hit ? hit.id : null);
+      isDraggingRef.current = !!hit;
+      setState({ isDrawing: !!hit, startX: x, startY: y });
+      return;
+    }
+
     setState({
       isDrawing: true,
       startX: x,
@@ -148,6 +165,16 @@ export function useCanvasDrawing(
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
+    if (tool === 'select') {
+      if (isDraggingRef.current && selectedId) {
+        const dx = x - state.startX;
+        const dy = y - state.startY;
+        moveShapePreview(selectedId, dx, dy);
+        setState(prev => ({ ...prev, startX: x, startY: y }));
+      }
+      return;
+    }
+
     if (tool === 'pen' || tool === 'eraser') {
       if (currentShapeRef.current && 'points' in currentShapeRef.current) {
         currentShapeRef.current.points.push([x, y]);
@@ -160,6 +187,15 @@ export function useCanvasDrawing(
   };
 
   const handleMouseUp = () => {
+    if (tool === 'select') {
+      if (isDraggingRef.current) {
+        commitMove();
+      }
+      isDraggingRef.current = false;
+      setState(prev => ({ ...prev, isDrawing: false }));
+      return;
+    }
+
     if (!state.isDrawing || !currentShapeRef.current) {
       setState(prev => ({ ...prev, isDrawing: false }));
       return;
