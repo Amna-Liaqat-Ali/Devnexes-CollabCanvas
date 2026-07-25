@@ -38,21 +38,26 @@ export function useCanvasDrawing(
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, width, height);
 
     ctx.strokeStyle = '#e8e8e8';
     ctx.lineWidth = 0.5;
-    for (let i = 0; i < canvas.width; i += 20) {
+    for (let i = 0; i < width; i += 20) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvas.height);
+      ctx.lineTo(i, height);
       ctx.stroke();
     }
-    for (let i = 0; i < canvas.height; i += 20) {
+    for (let i = 0; i < height; i += 20) {
       ctx.beginPath();
       ctx.moveTo(0, i);
-      ctx.lineTo(canvas.width, i);
+      ctx.lineTo(width, i);
       ctx.stroke();
     }
 

@@ -27,8 +27,9 @@ export function Canvas() {
 
     const resize = () => {
       const { width, height } = wrapper.getBoundingClientRect();
-      canvas.width = width;
-      canvas.height = height;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
       redraw();
     };
 
