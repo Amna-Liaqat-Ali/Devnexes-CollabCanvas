@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useCanvasDrawing } from '../hooks/useCanvasDrawing';
 import { useBoardStore } from './store/boardStore';
 import { generateId } from './utils/drawing';
+import { getSocket } from '../lib/socket';
 
 export function Canvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -50,16 +51,21 @@ export function Canvas() {
     if (!textEditor) return;
     const text = textValue.trim();
     if (text) {
-      addShape({
+      const shape = {
         id: generateId(),
-        type: 'text',
+        type: 'text' as const,
         x: textEditor.x,
         y: textEditor.y,
         text,
         fontSize: size * 4,
         color,
         userId: 'local-user',
-      });
+      };
+      addShape(shape);
+      const socket = getSocket();
+      if (socket.connected) {
+        socket.emit('draw', shape);
+      }
     }
     setTextEditor(null);
   };

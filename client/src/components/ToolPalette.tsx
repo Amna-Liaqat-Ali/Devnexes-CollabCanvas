@@ -1,4 +1,5 @@
 import { useBoardStore, type Tool } from './store/boardStore';
+import { getSocket } from '../lib/socket';
 
 export function ToolPalette() {
   const tool = useBoardStore(state => state.tool);
@@ -12,6 +13,24 @@ export function ToolPalette() {
   const clearBoard = useBoardStore(state => state.clearBoard);
   const selectedId = useBoardStore(state => state.selectedId);
   const deleteSelected = useBoardStore(state => state.deleteSelected);
+
+  const handleUndo = () => {
+    undo();
+    const socket = getSocket();
+    if (socket.connected) socket.emit('undo');
+  };
+
+  const handleClear = () => {
+    clearBoard();
+    const socket = getSocket();
+    if (socket.connected) socket.emit('clear_board');
+  };
+
+  const handleDeleteSelected = () => {
+    const socket = getSocket();
+    if (socket.connected && selectedId) socket.emit('delete_shape', selectedId);
+    deleteSelected();
+  };
 
   const tools: { id: Tool; label: string; icon: string }[] = [
     { id: 'select', label: 'Select', icon: '⬚' },
@@ -70,12 +89,12 @@ export function ToolPalette() {
       <div className="palette-divider"></div>
 
       <div className="palette-actions">
-        <button className="action-btn" onClick={undo}>Undo</button>
+        <button className="action-btn" onClick={handleUndo}>Undo</button>
         <button className="action-btn" onClick={redo}>Redo</button>
         {selectedId && (
-          <button className="action-btn" onClick={deleteSelected}>Delete Selected</button>
+          <button className="action-btn" onClick={handleDeleteSelected}>Delete Selected</button>
         )}
-        <button className="action-btn" onClick={clearBoard}>Clear</button>
+        <button className="action-btn" onClick={handleClear}>Clear</button>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSocket } from '../lib/socket';
-import type { User } from '../../../shared/types';
+import { useBoardStore } from '../components/store/boardStore';
+import type { Board, User } from '../../../shared/types';
 
 type ConnectionStatus = 'connecting' | 'connected' | 'room_full' | 'error';
 
@@ -30,9 +31,10 @@ export function useRoomConnection(roomCode: string, username: string) {
       socket.emit('join_room', { roomCode, username });
     };
 
-    const handleBoardUpdate = (board: { users: Record<string, User> }) => {
+    const handleBoardUpdate = (board: Board) => {
       joinedRef.current = true;
       setResult({ status: 'connected', errorMessage: null, users: board.users, selfId: socket.id ?? null });
+      useBoardStore.getState().setShapes(board.shapes);
     };
 
     const handleUserJoined = (user: User) => {
@@ -72,6 +74,7 @@ export function useRoomConnection(roomCode: string, username: string) {
       socket.off('room_full', handleRoomFull);
       socket.off('error', handleError);
       socket.disconnect();
+      useBoardStore.getState().setShapes([]);
     };
   }, [roomCode, username]);
 

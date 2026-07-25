@@ -52,6 +52,7 @@ io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   let joinedRoomCode: string | null = null;
+  const ownedShapeIds: string[] = [];
 
   socket.on('join_room', ({ roomCode, username }) => {
     if (typeof roomCode !== 'string' || !roomCode.trim() || typeof username !== 'string' || !username.trim()) {
@@ -81,6 +82,61 @@ io.on('connection', (socket) => {
 
     socket.emit('board_update', board);
     socket.to(normalizedRoomCode).emit('user_joined', user);
+  });
+
+  socket.on('draw', (shape) => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board) return;
+
+    board.shapes.push(shape);
+    board.lastModified = new Date();
+    ownedShapeIds.push(shape.id);
+    io.to(joinedRoomCode).emit('board_update', board);
+  });
+
+  socket.on('delete_shape', (shapeId) => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board) return;
+
+    board.shapes = board.shapes.filter(s => s.id !== shapeId);
+    board.lastModified = new Date();
+    io.to(joinedRoomCode).emit('board_update', board);
+  });
+
+  socket.on('undo', () => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board) return;
+
+    const lastOwnedId = ownedShapeIds.pop();
+    if (!lastOwnedId) return;
+
+    board.shapes = board.shapes.filter(s => s.id !== lastOwnedId);
+    board.lastModified = new Date();
+    io.to(joinedRoomCode).emit('board_update', board);
+  });
+
+  socket.on('clear_board', () => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board) return;
+
+    board.shapes = [];
+    board.lastModified = new Date();
+    ownedShapeIds.length = 0;
+    io.to(joinedRoomCode).emit('board_update', board);
+  });
+
+  socket.on('cursor_move', ({ x, y }) => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board || !board.users[socket.id]) return;
+
+    board.users[socket.id].cursorX = x;
+    board.users[socket.id].cursorY = y;
+    socket.to(joinedRoomCode).emit('cursor_update', { userId: socket.id, x, y });
   });
 
   socket.on('disconnect', () => {

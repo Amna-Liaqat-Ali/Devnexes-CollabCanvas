@@ -16,6 +16,7 @@ interface BoardState {
   addShape: (shape: Shape) => void;
   deleteShape: (shapeId: string) => void;
   clearBoard: () => void;
+  setShapes: (shapes: Shape[]) => void;
   undo: () => void;
   redo: () => void;
   getBoard: () => Board;
@@ -146,4 +147,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       set({ selectedId: null });
     }
   },
+
+  setShapes: (shapes: Shape[]) => set({ shapes }),
 }));

@@ -2,6 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Shape } from '../../../shared/types';
 import { drawShape, drawSelectionOutline, generateId, hitTestShape } from '../components/utils/drawing';
 import { useBoardStore } from '../components/store/boardStore';
+import { getSocket } from '../lib/socket';
 
 interface DrawingState {
   isDrawing: boolean;
@@ -209,6 +210,10 @@ export function useCanvasDrawing(
     setState(prev => ({ ...prev, isDrawing: false }));
 
     addShape(currentShapeRef.current);
+    const socket = getSocket();
+    if (socket.connected) {
+      socket.emit('draw', currentShapeRef.current);
+    }
     currentShapeRef.current = null;
   };
 
