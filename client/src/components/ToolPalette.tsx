@@ -13,6 +13,8 @@ export function ToolPalette() {
   const clearBoard = useBoardStore(state => state.clearBoard);
   const selectedId = useBoardStore(state => state.selectedId);
   const deleteSelected = useBoardStore(state => state.deleteSelected);
+  const shapes = useBoardStore(state => state.shapes);
+  const canvasElement = useBoardStore(state => state.canvasElement);
 
   const handleUndo = () => {
     const socket = getSocket();
@@ -42,6 +44,23 @@ export function ToolPalette() {
     const socket = getSocket();
     if (socket.connected && selectedId) socket.emit('delete_shape', selectedId);
     deleteSelected();
+  };
+
+  const downloadFile = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    link.click();
+  };
+
+  const handleExportPng = () => {
+    if (!canvasElement) return;
+    downloadFile(canvasElement.toDataURL('image/png'), `collabcanvas-${Date.now()}.png`);
+  };
+
+  const handleExportJson = () => {
+    const blob = new Blob([JSON.stringify(shapes, null, 2)], { type: 'application/json' });
+    downloadFile(URL.createObjectURL(blob), `collabcanvas-${Date.now()}.json`);
   };
 
   const tools: { id: Tool; label: string; icon: string }[] = [
@@ -107,6 +126,13 @@ export function ToolPalette() {
           <button className="action-btn" onClick={handleDeleteSelected}>Delete Selected</button>
         )}
         <button className="action-btn" onClick={handleClear}>Clear</button>
+      </div>
+
+      <div className="palette-divider"></div>
+
+      <div className="palette-actions">
+        <button className="action-btn" onClick={handleExportPng}>Export PNG</button>
+        <button className="action-btn" onClick={handleExportJson}>Export JSON</button>
       </div>
     </div>
   );

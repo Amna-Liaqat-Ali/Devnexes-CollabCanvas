@@ -12,6 +12,7 @@ interface BoardState {
   color: string;
   size: number;
   selectedId: string | null;
+  canvasElement: HTMLCanvasElement | null;
 
   addShape: (shape: Shape) => void;
   deleteShape: (shapeId: string) => void;
@@ -27,6 +28,7 @@ interface BoardState {
   moveShapePreview: (shapeId: string, dx: number, dy: number) => void;
   commitMove: () => void;
   deleteSelected: () => void;
+  setCanvasElement: (canvas: HTMLCanvasElement | null) => void;
 }
 
 export const useBoardStore = create<BoardState>((set, get) => ({
@@ -37,6 +39,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   color: '#000000',
   size: 3,
   selectedId: null,
+  canvasElement: null,
 
   addShape: (shape: Shape) => {
     set((state) => {
@@ -149,4 +152,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   },
 
   setShapes: (shapes: Shape[]) => set({ shapes, history: [shapes], historyIndex: 0 }),
+
+  setCanvasElement: (canvas: HTMLCanvasElement | null) => set({ canvasElement: canvas }),
 }));

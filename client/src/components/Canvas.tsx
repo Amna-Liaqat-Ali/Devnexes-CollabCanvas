@@ -21,6 +21,7 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
   const addShape = useBoardStore(state => state.addShape);
   const color = useBoardStore(state => state.color);
   const size = useBoardStore(state => state.size);
+  const setCanvasElement = useBoardStore(state => state.setCanvasElement);
 
   const [textEditor, setTextEditor] = useState<{ x: number; y: number } | null>(null);
   const [textValue, setTextValue] = useState('');
@@ -46,6 +47,11 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
       socket.emit('cursor_move', { x: e.clientX - rect.left, y: e.clientY - rect.top });
     }
   };
+
+  useEffect(() => {
+    setCanvasElement(canvasRef.current);
+    return () => setCanvasElement(null);
+  }, [setCanvasElement]);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
