@@ -86,6 +86,7 @@ io.on('connection', (socket) => {
 
   let joinedRoomCode: string | null = null;
   const ownedShapeIds: string[] = [];
+  const redoStack: Shape[] = [];
 
   socket.on('join_room', ({ roomCode, username }) => {
     if (typeof roomCode !== 'string' || !roomCode.trim() || typeof username !== 'string' || !username.trim()) {
@@ -129,6 +130,7 @@ io.on('connection', (socket) => {
     board.shapes.push(shape);
     board.lastModified = new Date();
     ownedShapeIds.push(shape.id);
+    redoStack.length = 0;
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -143,6 +145,7 @@ io.on('connection', (socket) => {
 
     board.shapes = board.shapes.filter(s => s.id !== shapeId);
     board.lastModified = new Date();
+    redoStack.length = 0;
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -154,8 +157,24 @@ io.on('connection', (socket) => {
     const lastOwnedId = ownedShapeIds.pop();
     if (!lastOwnedId) return;
 
+    const undoneShape = board.shapes.find(s => s.id === lastOwnedId);
     board.shapes = board.shapes.filter(s => s.id !== lastOwnedId);
     board.lastModified = new Date();
+    if (undoneShape) redoStack.push(undoneShape);
+    io.to(joinedRoomCode).emit('board_update', board);
+  });
+
+  socket.on('redo', () => {
+    if (!joinedRoomCode) return;
+    const board = boards.get(joinedRoomCode);
+    if (!board) return;
+
+    const shape = redoStack.pop();
+    if (!shape) return;
+
+    board.shapes.push(shape);
+    board.lastModified = new Date();
+    ownedShapeIds.push(shape.id);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -167,6 +186,7 @@ io.on('connection', (socket) => {
     board.shapes = [];
     board.lastModified = new Date();
     ownedShapeIds.length = 0;
+    redoStack.length = 0;
     io.to(joinedRoomCode).emit('board_update', board);
   });
 

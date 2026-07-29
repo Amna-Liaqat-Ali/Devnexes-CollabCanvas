@@ -15,9 +15,21 @@ export function ToolPalette() {
   const deleteSelected = useBoardStore(state => state.deleteSelected);
 
   const handleUndo = () => {
-    undo();
     const socket = getSocket();
-    if (socket.connected) socket.emit('undo');
+    if (socket.connected) {
+      socket.emit('undo');
+    } else {
+      undo();
+    }
+  };
+
+  const handleRedo = () => {
+    const socket = getSocket();
+    if (socket.connected) {
+      socket.emit('redo');
+    } else {
+      redo();
+    }
   };
 
   const handleClear = () => {
@@ -90,7 +102,7 @@ export function ToolPalette() {
 
       <div className="palette-actions">
         <button className="action-btn" onClick={handleUndo}>Undo</button>
-        <button className="action-btn" onClick={redo}>Redo</button>
+        <button className="action-btn" onClick={handleRedo}>Redo</button>
         {selectedId && (
           <button className="action-btn" onClick={handleDeleteSelected}>Delete Selected</button>
         )}

@@ -84,6 +84,7 @@ export type ClientToServerEvents = {
   'delete_shape': (shapeId: string) => void;
   'cursor_move': (data: { x: number; y: number }) => void;
   'undo': () => void;
+  'redo': () => void;
   'clear_board': () => void;
   'ping': (callback: (serverTime: number) => void) => void;
 };

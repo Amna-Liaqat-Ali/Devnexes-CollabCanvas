@@ -148,5 +148,5 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
   },
 
-  setShapes: (shapes: Shape[]) => set({ shapes }),
+  setShapes: (shapes: Shape[]) => set({ shapes, history: [shapes], historyIndex: 0 }),
 }));
