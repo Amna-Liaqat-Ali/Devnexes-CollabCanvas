@@ -3,8 +3,17 @@ import { useCanvasDrawing } from '../hooks/useCanvasDrawing';
 import { useBoardStore } from './store/boardStore';
 import { generateId } from './utils/drawing';
 import { getSocket } from '../lib/socket';
+import type { User } from '../../../shared/types';
 
-export function Canvas() {
+const CURSOR_THROTTLE_MS = 50;
+
+interface CanvasProps {
+  remoteCursors?: Record<string, { x: number; y: number }>;
+  users?: Record<string, User>;
+  selfId?: string | null;
+}
+
+export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: CanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -20,6 +29,23 @@ export function Canvas() {
     setTextValue('');
     setTextEditor({ x, y });
   });
+
+  const lastCursorSentRef = useRef(0);
+  const handleCursorMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    handlers.handleMouseMove(e);
+
+    const now = Date.now();
+    if (now - lastCursorSentRef.current < CURSOR_THROTTLE_MS) return;
+    lastCursorSentRef.current = now;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const socket = getSocket();
+    if (socket.connected) {
+      socket.emit('cursor_move', { x: e.clientX - rect.left, y: e.clientY - rect.top });
+    }
+  };
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
@@ -76,10 +102,27 @@ export function Canvas() {
         ref={canvasRef}
         className="canvas"
         onMouseDown={handlers.handleMouseDown}
-        onMouseMove={handlers.handleMouseMove}
+        onMouseMove={handleCursorMove}
         onMouseUp={handlers.handleMouseUp}
         onMouseLeave={handlers.handleMouseUp}
       />
+      {Object.entries(remoteCursors).map(([userId, pos]) => {
+        if (userId === selfId) return null;
+        const user = users[userId];
+        if (!user) return null;
+        return (
+          <div
+            key={userId}
+            className="remote-cursor"
+            style={{ left: pos.x, top: pos.y }}
+          >
+            <div className="remote-cursor-dot" style={{ backgroundColor: user.color }} />
+            <span className="remote-cursor-label" style={{ backgroundColor: user.color }}>
+              {user.name}
+            </span>
+          </div>
+        );
+      })}
       {textEditor && (
         <input
           ref={inputRef}

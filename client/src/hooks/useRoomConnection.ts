@@ -10,6 +10,7 @@ interface RoomConnectionResult {
   errorMessage: string | null;
   users: Record<string, User>;
   selfId: string | null;
+  cursors: Record<string, { x: number; y: number }>;
 }
 
 export function useRoomConnection(roomCode: string, username: string) {
@@ -18,6 +19,7 @@ export function useRoomConnection(roomCode: string, username: string) {
     errorMessage: null,
     users: {},
     selfId: null,
+    cursors: {},
   });
   const joinedRef = useRef(false);
 
@@ -45,8 +47,14 @@ export function useRoomConnection(roomCode: string, username: string) {
       setResult(prev => {
         const users = { ...prev.users };
         delete users[userId];
-        return { ...prev, users };
+        const cursors = { ...prev.cursors };
+        delete cursors[userId];
+        return { ...prev, users, cursors };
       });
+    };
+
+    const handleCursorUpdate = ({ userId, x, y }: { userId: string; x: number; y: number }) => {
+      setResult(prev => ({ ...prev, cursors: { ...prev.cursors, [userId]: { x, y } } }));
     };
 
     const handleRoomFull = (message: string) => {
@@ -63,6 +71,7 @@ export function useRoomConnection(roomCode: string, username: string) {
     socket.on('user_left', handleUserLeft);
     socket.on('room_full', handleRoomFull);
     socket.on('error', handleError);
+    socket.on('cursor_update', handleCursorUpdate);
 
     socket.connect();
 
@@ -73,6 +82,7 @@ export function useRoomConnection(roomCode: string, username: string) {
       socket.off('user_left', handleUserLeft);
       socket.off('room_full', handleRoomFull);
       socket.off('error', handleError);
+      socket.off('cursor_update', handleCursorUpdate);
       socket.disconnect();
       useBoardStore.getState().setShapes([]);
     };

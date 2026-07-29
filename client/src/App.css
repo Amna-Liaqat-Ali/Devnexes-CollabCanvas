@@ -139,6 +139,34 @@ html, body, #root {
   cursor: crosshair;
 }
 
+.remote-cursor {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-2px, -2px);
+  z-index: 10;
+  transition: left 0.05s linear, top 0.05s linear;
+}
+
+.remote-cursor-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.remote-cursor-label {
+  position: absolute;
+  left: 12px;
+  top: -4px;
+  color: white;
+  font-size: 11px;
+  font-family: sans-serif;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 .text-editor-input {
   position: absolute;
   font-family: sans-serif;

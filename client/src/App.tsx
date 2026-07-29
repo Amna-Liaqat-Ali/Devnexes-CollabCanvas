@@ -24,7 +24,7 @@ export function App() {
 }
 
 function Room({ roomCode, username, onLeave }: { roomCode: string; username: string; onLeave: () => void }) {
-  const { status, errorMessage, users, selfId } = useRoomConnection(roomCode, username);
+  const { status, errorMessage, users, selfId, cursors } = useRoomConnection(roomCode, username);
 
   if (status === 'room_full' || status === 'error') {
     return (
@@ -41,7 +41,7 @@ function Room({ roomCode, username, onLeave }: { roomCode: string; username: str
   return (
     <div className="app-container">
       <ToolPalette />
-      <Canvas />
+      <Canvas remoteCursors={cursors} users={users} selfId={selfId} />
       <UserList roomCode={roomCode} users={users} selfId={selfId} />
     </div>
   );
