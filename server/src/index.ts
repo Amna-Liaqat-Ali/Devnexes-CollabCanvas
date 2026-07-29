@@ -2,6 +2,8 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
 import type { ClientToServerEvents, ServerToClientEvents, Board, User, Shape } from '../../shared/types';
 
 const app = express();
@@ -25,6 +27,48 @@ const MAX_USERS_PER_ROOM = 10;
 const USER_COLORS = ['#FF6B6B', '#95E1D3', '#F6D55C', '#3D9970', '#A28BFB', '#FF9F43', '#38BDF8', '#F472B6'];
 
 const boards = new Map<string, Board>();
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const persistTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const PERSIST_DEBOUNCE_MS = 300;
+
+function boardFilePath(roomCode: string): string {
+  return path.join(DATA_DIR, `${roomCode}.json`);
+}
+
+function loadPersistedBoards(): void {
+  if (!fs.existsSync(DATA_DIR)) return;
+  for (const file of fs.readdirSync(DATA_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    try {
+      const raw = fs.readFileSync(path.join(DATA_DIR, file), 'utf-8');
+      const saved = JSON.parse(raw) as Board;
+      boards.set(saved.roomCode, {
+        ...saved,
+        users: {},
+        createdAt: new Date(saved.createdAt),
+        lastModified: new Date(saved.lastModified),
+      });
+    } catch {
+      // skip corrupt/unreadable save file
+    }
+  }
+}
+
+function persistBoard(board: Board): void {
+  const existing = persistTimers.get(board.roomCode);
+  if (existing) clearTimeout(existing);
+
+  persistTimers.set(board.roomCode, setTimeout(() => {
+    persistTimers.delete(board.roomCode);
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    const { users, ...persisted } = board;
+    void users;
+    fs.writeFileSync(boardFilePath(board.roomCode), JSON.stringify(persisted, null, 2));
+  }, PERSIST_DEBOUNCE_MS));
+}
+
+loadPersistedBoards();
 
 function getOrCreateBoard(roomCode: string): Board {
   let board = boards.get(roomCode);
@@ -131,6 +175,7 @@ io.on('connection', (socket) => {
     board.lastModified = new Date();
     ownedShapeIds.push(shape.id);
     redoStack.length = 0;
+    persistBoard(board);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -146,6 +191,7 @@ io.on('connection', (socket) => {
     board.shapes = board.shapes.filter(s => s.id !== shapeId);
     board.lastModified = new Date();
     redoStack.length = 0;
+    persistBoard(board);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -161,6 +207,7 @@ io.on('connection', (socket) => {
     board.shapes = board.shapes.filter(s => s.id !== lastOwnedId);
     board.lastModified = new Date();
     if (undoneShape) redoStack.push(undoneShape);
+    persistBoard(board);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -175,6 +222,7 @@ io.on('connection', (socket) => {
     board.shapes.push(shape);
     board.lastModified = new Date();
     ownedShapeIds.push(shape.id);
+    persistBoard(board);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -187,6 +235,7 @@ io.on('connection', (socket) => {
     board.lastModified = new Date();
     ownedShapeIds.length = 0;
     redoStack.length = 0;
+    persistBoard(board);
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
@@ -213,10 +262,6 @@ io.on('connection', (socket) => {
       if (board && board.users[socket.id]) {
         delete board.users[socket.id];
         socket.to(joinedRoomCode).emit('user_left', socket.id);
-
-        if (Object.keys(board.users).length === 0) {
-          boards.delete(joinedRoomCode);
-        }
       }
     }
   });
