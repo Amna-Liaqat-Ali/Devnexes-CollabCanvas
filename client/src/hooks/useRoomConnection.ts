@@ -35,7 +35,13 @@ export function useRoomConnection(roomCode: string, username: string) {
 
     const handleBoardUpdate = (board: Board) => {
       joinedRef.current = true;
-      setResult({ status: 'connected', errorMessage: null, users: board.users, selfId: socket.id ?? null });
+      setResult(prev => ({
+        status: 'connected',
+        errorMessage: null,
+        users: board.users,
+        selfId: socket.id ?? null,
+        cursors: prev.cursors,
+      }));
       useBoardStore.getState().setShapes(board.shapes);
     };
 
@@ -71,7 +77,13 @@ export function useRoomConnection(roomCode: string, username: string) {
       setResult(prev => ({ ...prev, status: 'reconnecting', users: {}, cursors: {} }));
     };
 
+    const handleConnectError = () => {
+      if (joinedRef.current) return;
+      setResult(prev => ({ ...prev, status: 'reconnecting' }));
+    };
+
     socket.on('connect', handleConnect);
+    socket.on('connect_error', handleConnectError);
     socket.on('board_update', handleBoardUpdate);
     socket.on('user_joined', handleUserJoined);
     socket.on('user_left', handleUserLeft);
@@ -84,6 +96,7 @@ export function useRoomConnection(roomCode: string, username: string) {
 
     return () => {
       socket.off('connect', handleConnect);
+      socket.off('connect_error', handleConnectError);
       socket.off('board_update', handleBoardUpdate);
       socket.off('user_joined', handleUserJoined);
       socket.off('user_left', handleUserLeft);
