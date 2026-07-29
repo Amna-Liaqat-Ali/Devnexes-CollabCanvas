@@ -40,6 +40,9 @@ function Room({ roomCode, username, onLeave }: { roomCode: string; username: str
 
   return (
     <div className="app-container">
+      {status === 'reconnecting' && (
+        <div className="reconnect-banner">Connection lost — reconnecting...</div>
+      )}
       <ToolPalette />
       <Canvas remoteCursors={cursors} users={users} selfId={selfId} />
       <UserList roomCode={roomCode} users={users} selfId={selfId} />

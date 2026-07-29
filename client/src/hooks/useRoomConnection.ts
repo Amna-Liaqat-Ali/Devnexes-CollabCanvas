@@ -3,7 +3,7 @@ import { getSocket } from '../lib/socket';
 import { useBoardStore } from '../components/store/boardStore';
 import type { Board, User } from '../../../shared/types';
 
-type ConnectionStatus = 'connecting' | 'connected' | 'room_full' | 'error';
+type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'room_full' | 'error';
 
 interface RoomConnectionResult {
   status: ConnectionStatus;
@@ -65,6 +65,12 @@ export function useRoomConnection(roomCode: string, username: string) {
       setResult(prev => ({ ...prev, status: 'error', errorMessage: message }));
     };
 
+    const handleDisconnect = (reason: string) => {
+      joinedRef.current = false;
+      if (reason === 'io client disconnect') return;
+      setResult(prev => ({ ...prev, status: 'reconnecting', users: {}, cursors: {} }));
+    };
+
     socket.on('connect', handleConnect);
     socket.on('board_update', handleBoardUpdate);
     socket.on('user_joined', handleUserJoined);
@@ -72,6 +78,7 @@ export function useRoomConnection(roomCode: string, username: string) {
     socket.on('room_full', handleRoomFull);
     socket.on('error', handleError);
     socket.on('cursor_update', handleCursorUpdate);
+    socket.on('disconnect', handleDisconnect);
 
     socket.connect();
 
@@ -83,6 +90,7 @@ export function useRoomConnection(roomCode: string, username: string) {
       socket.off('room_full', handleRoomFull);
       socket.off('error', handleError);
       socket.off('cursor_update', handleCursorUpdate);
+      socket.off('disconnect', handleDisconnect);
       socket.disconnect();
       useBoardStore.getState().setShapes([]);
     };
