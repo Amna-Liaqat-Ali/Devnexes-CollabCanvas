@@ -31,8 +31,20 @@ function Room({ roomCode, username, onLeave }: { roomCode: string; username: str
       <div className="join-screen">
         <div className="join-card">
           <h1>CollabCanvas</h1>
-          <p className="join-subtitle">{errorMessage ?? 'Something went wrong.'}</p>
+          <p className="join-subtitle error-text">{errorMessage ?? 'Something went wrong.'}</p>
           <button onClick={onLeave}>Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'connecting') {
+    return (
+      <div className="join-screen">
+        <div className="join-card">
+          <h1>CollabCanvas</h1>
+          <div className="spinner" aria-label="Connecting" />
+          <p className="join-subtitle">Joining room {roomCode}...</p>
         </div>
       </div>
     );

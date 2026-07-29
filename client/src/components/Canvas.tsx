@@ -22,6 +22,7 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
   const color = useBoardStore(state => state.color);
   const size = useBoardStore(state => state.size);
   const setCanvasElement = useBoardStore(state => state.setCanvasElement);
+  const shapeCount = useBoardStore(state => state.shapes.length);
 
   const [textEditor, setTextEditor] = useState<{ x: number; y: number } | null>(null);
   const [textValue, setTextValue] = useState('');
@@ -112,6 +113,9 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
         onMouseUp={handlers.handleMouseUp}
         onMouseLeave={handlers.handleMouseUp}
       />
+      {shapeCount === 0 && !textEditor && (
+        <div className="canvas-empty-hint">Draw something to get started — pick a tool from the palette</div>
+      )}
       {Object.entries(remoteCursors).map(([userId, pos]) => {
         if (userId === selfId) return null;
         const user = users[userId];
