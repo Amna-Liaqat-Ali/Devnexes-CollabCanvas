@@ -49,6 +49,29 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
     }
   };
 
+  const toMouseEvent = (e: React.TouchEvent<HTMLCanvasElement>): React.MouseEvent<HTMLCanvasElement> | null => {
+    const touch = e.touches[0] ?? e.changedTouches[0];
+    if (!touch) return null;
+    return { ...e, clientX: touch.clientX, clientY: touch.clientY } as unknown as React.MouseEvent<HTMLCanvasElement>;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const mouseEvent = toMouseEvent(e);
+    if (mouseEvent) handlers.handleMouseDown(mouseEvent);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const mouseEvent = toMouseEvent(e);
+    if (mouseEvent) handleCursorMove(mouseEvent);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    handlers.handleMouseUp();
+  };
+
   useEffect(() => {
     setCanvasElement(canvasRef.current);
     return () => setCanvasElement(null);
@@ -112,6 +135,10 @@ export function Canvas({ remoteCursors = {}, users = {}, selfId = null }: Canvas
         onMouseMove={handleCursorMove}
         onMouseUp={handlers.handleMouseUp}
         onMouseLeave={handlers.handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
       />
       {shapeCount === 0 && !textEditor && (
         <div className="canvas-empty-hint">Draw something to get started — pick a tool from the palette</div>
