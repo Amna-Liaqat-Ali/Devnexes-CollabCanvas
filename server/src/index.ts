@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import cors from 'cors';
-import type { ClientToServerEvents, ServerToClientEvents, Board, User } from '../../shared/types';
+import type { ClientToServerEvents, ServerToClientEvents, Board, User, Shape } from '../../shared/types';
 
 const app = express();
 const httpServer = createServer(app);
@@ -47,6 +47,39 @@ function colorForUser(board: Board): string {
   return USER_COLORS[usedCount % USER_COLORS.length];
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function isPointArray(value: unknown): value is [number, number][] {
+  return Array.isArray(value) && value.every(
+    p => Array.isArray(p) && p.length === 2 && isFiniteNumber(p[0]) && isFiniteNumber(p[1])
+  );
+}
+
+function isValidShape(value: unknown): value is Shape {
+  if (typeof value !== 'object' || value === null) return false;
+  const shape = value as Record<string, unknown>;
+  if (typeof shape.id !== 'string' || !shape.id) return false;
+  if (typeof shape.userId !== 'string' || !shape.userId) return false;
+
+  switch (shape.type) {
+    case 'pen':
+    case 'eraser':
+      return isPointArray(shape.points) && isFiniteNumber(shape.width);
+    case 'line':
+      return ['x1', 'y1', 'x2', 'y2'].every(k => isFiniteNumber(shape[k])) && isFiniteNumber(shape.width);
+    case 'rect':
+      return ['x', 'y', 'width', 'height'].every(k => isFiniteNumber(shape[k]));
+    case 'circle':
+      return ['cx', 'cy', 'r'].every(k => isFiniteNumber(shape[k]));
+    case 'text':
+      return isFiniteNumber(shape.x) && isFiniteNumber(shape.y) && typeof shape.text === 'string' && isFiniteNumber(shape.fontSize);
+    default:
+      return false;
+  }
+}
+
 // Socket.IO connection
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -88,6 +121,10 @@ io.on('connection', (socket) => {
     if (!joinedRoomCode) return;
     const board = boards.get(joinedRoomCode);
     if (!board) return;
+    if (!isValidShape(shape)) {
+      socket.emit('error', 'Invalid shape payload');
+      return;
+    }
 
     board.shapes.push(shape);
     board.lastModified = new Date();
@@ -99,6 +136,10 @@ io.on('connection', (socket) => {
     if (!joinedRoomCode) return;
     const board = boards.get(joinedRoomCode);
     if (!board) return;
+    if (typeof shapeId !== 'string' || !shapeId) {
+      socket.emit('error', 'Invalid shapeId payload');
+      return;
+    }
 
     board.shapes = board.shapes.filter(s => s.id !== shapeId);
     board.lastModified = new Date();
@@ -133,6 +174,7 @@ io.on('connection', (socket) => {
     if (!joinedRoomCode) return;
     const board = boards.get(joinedRoomCode);
     if (!board || !board.users[socket.id]) return;
+    if (!isFiniteNumber(x) || !isFiniteNumber(y)) return;
 
     board.users[socket.id].cursorX = x;
     board.users[socket.id].cursorY = y;
