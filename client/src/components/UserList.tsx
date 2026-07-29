@@ -4,9 +4,10 @@ interface UserListProps {
   roomCode: string;
   users: Record<string, User>;
   selfId: string | null;
+  latencyMs?: number | null;
 }
 
-export function UserList({ roomCode, users, selfId }: UserListProps) {
+export function UserList({ roomCode, users, selfId, latencyMs = null }: UserListProps) {
   const userList = Object.values(users);
 
   return (
@@ -37,6 +38,7 @@ export function UserList({ roomCode, users, selfId }: UserListProps) {
 
       <div className="user-list-footer">
         <small>Users: {userList.length}/10</small>
+        {latencyMs !== null && <small>Latency: {latencyMs}ms</small>}
       </div>
     </div>
   );

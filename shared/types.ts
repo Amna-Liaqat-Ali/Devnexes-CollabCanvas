@@ -85,6 +85,7 @@ export type ClientToServerEvents = {
   'cursor_move': (data: { x: number; y: number }) => void;
   'undo': () => void;
   'clear_board': () => void;
+  'ping': (callback: (serverTime: number) => void) => void;
 };
 
 // Socket events - server to client

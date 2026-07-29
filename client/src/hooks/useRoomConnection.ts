@@ -11,7 +11,10 @@ interface RoomConnectionResult {
   users: Record<string, User>;
   selfId: string | null;
   cursors: Record<string, { x: number; y: number }>;
+  latencyMs: number | null;
 }
+
+const LATENCY_PING_INTERVAL_MS = 5000;
 
 export function useRoomConnection(roomCode: string, username: string) {
   const [result, setResult] = useState<RoomConnectionResult>({
@@ -20,6 +23,7 @@ export function useRoomConnection(roomCode: string, username: string) {
     users: {},
     selfId: null,
     cursors: {},
+    latencyMs: null,
   });
   const joinedRef = useRef(false);
 
@@ -41,6 +45,7 @@ export function useRoomConnection(roomCode: string, username: string) {
         users: board.users,
         selfId: socket.id ?? null,
         cursors: prev.cursors,
+        latencyMs: prev.latencyMs,
       }));
       useBoardStore.getState().setShapes(board.shapes);
     };
@@ -94,7 +99,16 @@ export function useRoomConnection(roomCode: string, username: string) {
 
     socket.connect();
 
+    const pingInterval = setInterval(() => {
+      if (!socket.connected) return;
+      const sentAt = Date.now();
+      socket.emit('ping', () => {
+        setResult(prev => ({ ...prev, latencyMs: Date.now() - sentAt }));
+      });
+    }, LATENCY_PING_INTERVAL_MS);
+
     return () => {
+      clearInterval(pingInterval);
       socket.off('connect', handleConnect);
       socket.off('connect_error', handleConnectError);
       socket.off('board_update', handleBoardUpdate);

@@ -170,6 +170,10 @@ io.on('connection', (socket) => {
     io.to(joinedRoomCode).emit('board_update', board);
   });
 
+  socket.on('ping', (callback) => {
+    if (typeof callback === 'function') callback(Date.now());
+  });
+
   socket.on('cursor_move', ({ x, y }) => {
     if (!joinedRoomCode) return;
     const board = boards.get(joinedRoomCode);
