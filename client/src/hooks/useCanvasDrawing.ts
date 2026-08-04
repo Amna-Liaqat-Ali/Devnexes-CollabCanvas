@@ -129,6 +129,7 @@ export function useCanvasDrawing(
     const y = e.clientY - rect.top;
 
     if (tool === 'text') {
+      e.preventDefault();
       onTextClick?.(x, y);
       return;
     }
