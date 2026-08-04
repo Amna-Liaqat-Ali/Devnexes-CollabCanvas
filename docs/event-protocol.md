@@ -11,7 +11,9 @@ Socket.IO event contract between client and server. Types are the source of trut
 | `delete_shape` | `shapeId: string` | Remove a shape by id (selection + delete). Server validates the shape exists and rebroadcasts the removal. |
 | `cursor_move` | `{ x: number; y: number }` | Live pointer position. Throttled/batched client-side before emit — this is the highest-frequency event and must not be sent on every raw `pointermove`. |
 | `undo` | — | Revert the sender's last action. Server resolves against authoritative history and rebroadcasts the resulting board. |
+| `redo` | — | Reapply the sender's most recently undone action, if any. |
 | `clear_board` | — | Clear all shapes in the room. |
+| `ping` | `callback: (serverTime: number) => void` | Round-trip latency probe; server invokes the callback immediately with its current timestamp. |
 
 ## Server → Client (`ServerToClientEvents`)
 
