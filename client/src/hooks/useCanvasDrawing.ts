@@ -11,7 +11,7 @@ interface DrawingState {
 }
 
 export function useCanvasDrawing(
-  canvasRef: React.RefObject<HTMLCanvasElement>,
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
   onTextClick?: (x: number, y: number) => void
 ) {
   const shapes = useBoardStore(state => state.shapes);
