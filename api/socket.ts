@@ -65,24 +65,25 @@ function isValidShape(value: unknown): value is Shape {
   }
 }
 
-interface SocketServerHttp extends ServerResponse {
+type SocketServerHttp = ServerResponse & {
   socket: {
     server: {
       io?: SocketServer<ClientToServerEvents, ServerToClientEvents>;
     };
   };
-}
+};
 
-export default function handler(req: IncomingMessage, res: SocketServerHttp) {
-  if (!res.socket.server.io) {
-    const io = new SocketServer<ClientToServerEvents, ServerToClientEvents>(res.socket.server as never, {
+export default function handler(req: IncomingMessage, res: ServerResponse) {
+  const socketRes = res as unknown as SocketServerHttp;
+  if (!socketRes.socket.server.io) {
+    const io = new SocketServer<ClientToServerEvents, ServerToClientEvents>(socketRes.socket.server as never, {
       path: '/api/socket',
       cors: {
         origin: ALLOWED_ORIGINS,
         methods: ['GET', 'POST'],
       },
     });
-    res.socket.server.io = io;
+    socketRes.socket.server.io = io;
 
     io.on('connection', (socket) => {
       let joinedRoomCode: string | null = null;
