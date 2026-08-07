@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents, Board, User, Shape } from '../shared/types';
 
-const ALLOWED_ORIGINS = (process.env.CLIENT_ORIGIN ?? '*')
+const ALLOWED_ORIGINS = (process.env.CLIENT_ORIGIN ?? 'http://localhost:5173')
   .split(',')
   .map(origin => origin.trim());
 
@@ -73,7 +73,7 @@ type SocketServerHttp = ServerResponse & {
   };
 };
 
-export default function handler(req: IncomingMessage, res: ServerResponse) {
+export default function handler(_req: IncomingMessage, res: ServerResponse) {
   const socketRes = res as unknown as SocketServerHttp;
   if (!socketRes.socket.server.io) {
     const io = new SocketServer<ClientToServerEvents, ServerToClientEvents>(socketRes.socket.server as never, {
