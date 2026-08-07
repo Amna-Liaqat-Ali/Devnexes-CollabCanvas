@@ -7,3 +7,15 @@ build/
 *.log
 server/data/
 .vscode/settings.json
+
+# Global gitignore on this machine excludes all *.json; un-ignore the ones this repo needs.
+!package.json
+!package-lock.json
+!vercel.json
+!tsconfig*.json
+!client/package.json
+!client/package-lock.json
+!client/tsconfig*.json
+!server/package.json
+!server/package-lock.json
+!server/tsconfig*.json
